@@ -1,22 +1,53 @@
-# Core Game System – Detergentnation
+# Core System – Detergentnation
 
-Panduan penggunaan tiga script utama untuk mengatur alur permainan **Detergentnation** menggunakan Unity.
+Dokumentasi penggunaan sistem dasar game **Detergentnation** yang terdiri dari:
 
-## Daftar Script
+- `GameState`
+- `GameManager`
+- `LevelManager`
+- `LevelData`
+- `EnemyData`
 
-| Script            | Fungsi                                                                     |
-| ----------------- | -------------------------------------------------------------------------- |
-| `GameState.cs`    | Menyimpan daftar state atau kondisi permainan.                             |
-| `GameManager.cs`  | Mengatur state global, pause, resume, victory, dan game over.              |
-| `LevelManager.cs` | Mengatur level aktif, memuat scene, serta memulai dan menyelesaikan level. |
+Sistem ini digunakan sebagai fondasi untuk mengatur state permainan, level, dan konfigurasi enemy.
 
 ---
 
-## 1. GameState.cs
+# 1. Struktur Sistem
 
-### Fungsi
+Secara sederhana, hubungan antar-script:
 
-`GameState` merupakan enum yang mendefinisikan kondisi permainan.
+```text
+                    GameState
+                        │
+                        ▼
+                  GameManager
+                        │
+                        │
+                  LevelManager
+                        │
+                        ▼
+                   LevelData
+                        │
+                        ├── Scene Name
+                        ├── Level Number
+                        ├── Defense Points
+                        └── WaveData
+
+                   EnemyData
+                        │
+                        ▼
+                      Enemy
+```
+
+`GameState` menentukan kondisi permainan, `GameManager` mengatur kondisi tersebut, `LevelManager` mengatur level, `LevelData` menyimpan konfigurasi level, dan `EnemyData` menyimpan konfigurasi masing-masing jenis enemy.
+
+---
+
+# 2. GameState
+
+## Fungsi
+
+`GameState` merupakan enum yang digunakan untuk menentukan kondisi permainan.
 
 ```csharp
 public enum GameState
@@ -32,302 +63,860 @@ public enum GameState
 }
 ```
 
-### Daftar State
+## Daftar State
 
-| State             | Keterangan                                         |
-| ----------------- | -------------------------------------------------- |
-| `MainMenu`        | Pemain berada di menu utama.                       |
-| `Shop`            | Pemain berada di toko.                             |
-| `DefensePlanning` | Pemain sedang mengatur pertahanan sebelum bermain. |
-| `Playing`         | Gameplay sedang berlangsung.                       |
-| `WaveBreak`       | Jeda antar-wave.                                   |
-| `Paused`          | Permainan sedang dijeda.                           |
-| `Victory`         | Pemain berhasil menyelesaikan level.               |
-| `GameOver`        | Pemain mengalami kekalahan.                        |
+| State             | Fungsi                              |
+| ----------------- | ----------------------------------- |
+| `MainMenu`        | Pemain berada di Main Menu.         |
+| `Shop`            | Pemain berada di Shop.              |
+| `DefensePlanning` | Pemain melakukan persiapan defense. |
+| `Playing`         | Gameplay sedang berlangsung.        |
+| `WaveBreak`       | Jeda antar-wave.                    |
+| `Paused`          | Game sedang di-pause.               |
+| `Victory`         | Level berhasil diselesaikan.        |
+| `GameOver`        | Pemain mengalami kekalahan.         |
 
-### Contoh Penggunaan
+## Cara Menggunakan
+
+Biasanya `GameState` tidak perlu dipanggil secara langsung. State diubah melalui `GameManager`.
+
+Contoh:
 
 ```csharp
-GameState currentState = GameState.Playing;
+GameManager.Instance.SetState(GameState.Playing);
 ```
 
-Untuk memeriksa state:
+Untuk mengecek state:
 
 ```csharp
 if (GameManager.Instance.CurrentState == GameState.Playing)
 {
-    Debug.Log("Gameplay sedang berjalan");
+    Debug.Log("Gameplay sedang berlangsung.");
 }
 ```
 
 ---
 
-## 2. GameManager.cs
+# 3. GameManager
 
-### Fungsi
+## Fungsi
 
-`GameManager` mengatur kondisi global permainan. Script ini menggunakan pola **Singleton**, sehingga dapat diakses melalui `GameManager.Instance`.
+`GameManager` bertanggung jawab terhadap state global game.
 
-### Fitur
+Fitur utama:
 
-- Menyimpan state permainan saat ini.
-- Memulai permainan.
-- Menjeda dan melanjutkan permainan.
-- Mengatur kondisi Victory dan Game Over.
-- Tetap tersedia ketika scene berganti.
+- Mengatur Game State.
+- Memulai game.
+- Pause.
+- Resume.
+- Victory.
+- Game Over.
+- Menyimpan state sebelum pause.
+- Singleton.
+- Tetap hidup ketika scene berganti.
 
-### Cara Memasang
+## Setup di Unity
 
-1. Buat GameObject bernama `GameManager`.
-2. Tambahkan komponen `GameManager.cs`.
-3. Letakkan GameObject tersebut pada scene awal, misalnya Main Menu.
-4. Pastikan hanya ada satu instance `GameManager` yang aktif.
+Buat GameObject:
 
-### Daftar Method
+```text
+Hierarchy
+└── GameManager
+```
 
-| Method                | Fungsi                                                 |
-| --------------------- | ------------------------------------------------------ |
-| `StartGame()`         | Mengubah state menjadi `DefensePlanning`.              |
-| `PauseGame()`         | Menjeda waktu gameplay dan menyimpan state sebelumnya. |
-| `ResumeGame()`        | Melanjutkan permainan ke state sebelumnya.             |
-| `GameOver()`          | Mengubah state menjadi `GameOver`.                     |
-| `Victory()`           | Mengubah state menjadi `Victory`.                      |
-| `SetState(GameState)` | Mengubah state permainan secara langsung.              |
+Kemudian tambahkan:
 
-### Contoh Penggunaan
+```text
+GameManager.cs
+```
 
-**Memulai permainan:**
+GameObject ini cukup dibuat **satu kali**, biasanya pada scene Main Menu.
+
+`GameManager` menggunakan Singleton dan `DontDestroyOnLoad()`, sehingga tidak perlu dibuat ulang di setiap scene.
+
+---
+
+## Method
+
+### `StartGame()`
+
+Mengubah state menjadi:
+
+```text
+DefensePlanning
+```
+
+Contoh:
 
 ```csharp
 GameManager.Instance.StartGame();
 ```
 
-**Pause:**
+---
+
+### `PauseGame()`
+
+Menghentikan waktu gameplay.
 
 ```csharp
 GameManager.Instance.PauseGame();
 ```
 
-**Resume:**
+Pause hanya dapat dilakukan ketika state adalah:
+
+```text
+Playing
+```
+
+atau:
+
+```text
+WaveBreak
+```
+
+---
+
+### `ResumeGame()`
+
+Mengembalikan game ke state sebelum pause.
 
 ```csharp
 GameManager.Instance.ResumeGame();
 ```
 
-**Game Over:**
+Contoh:
 
-```csharp
-GameManager.Instance.GameOver();
+```text
+Playing
+   ↓
+Pause
+   ↓
+Paused
+   ↓
+Resume
+   ↓
+Playing
 ```
 
-**Victory:**
+---
+
+### `Victory()`
+
+Mengubah state menjadi:
+
+```text
+Victory
+```
+
+Contoh:
 
 ```csharp
 GameManager.Instance.Victory();
 ```
 
-**Mengubah state secara langsung:**
+---
 
-```csharp
-GameManager.Instance.SetState(GameState.WaveBreak);
+### `GameOver()`
+
+Mengubah state menjadi:
+
+```text
+GameOver
 ```
 
-### Catatan
+Contoh:
 
-`PauseGame()` hanya dapat digunakan ketika state saat ini adalah `Playing` atau `WaveBreak`.
-
-`SetState()` hanya mengubah state dan menampilkan log. Method ini belum otomatis mengatur perilaku gameplay, UI, atau WaveManager.
+```csharp
+GameManager.Instance.GameOver();
+```
 
 ---
 
-## 3. LevelManager.cs
+### `SetState()`
 
-### Fungsi
-
-`LevelManager` mengatur level yang sedang dimainkan dan menangani pemuatan scene.
-
-Script ini juga menggunakan pola **Singleton**, sehingga dapat diakses melalui `LevelManager.Instance`.
-
-### Cara Memasang
-
-1. Buat GameObject bernama `LevelManager`.
-2. Tambahkan komponen `LevelManager.cs`.
-3. Letakkan pada scene awal yang sama dengan `GameManager`.
-4. Pastikan hanya ada satu instance `LevelManager` yang aktif.
-
-### Daftar Method
-
-| Method                   | Fungsi                                                   |
-| ------------------------ | -------------------------------------------------------- |
-| `LoadLevel(string, int)` | Memuat scene berdasarkan nama dan menyimpan nomor level. |
-| `StartLevel()`           | Mengubah state permainan menjadi `Playing`.              |
-| `CompleteLevel()`        | Mengubah state menjadi `Victory`.                        |
-| `FailLevel()`            | Mengubah state menjadi `GameOver`.                       |
-
-### Contoh Penggunaan
-
-**Memuat Level 1:**
+Digunakan untuk mengubah state secara langsung.
 
 ```csharp
-LevelManager.Instance.LoadLevel("Level1", 1);
+GameManager.Instance.SetState(GameState.Shop);
 ```
 
-Parameter:
+---
 
-- `"Level1"` adalah nama scene yang akan dimuat.
-- `1` adalah nomor level yang disimpan.
+# 4. LevelManager
 
-**Memulai gameplay:**
+## Fungsi
+
+`LevelManager` bertanggung jawab untuk mengatur level dan memuat scene.
+
+Fungsi utama:
+
+- Menyimpan level aktif.
+- Memuat scene level.
+- Memulai level.
+- Menyelesaikan level.
+- Menentukan kondisi gagal.
+
+## Setup di Unity
+
+Buat GameObject:
+
+```text
+Hierarchy
+├── GameManager
+└── LevelManager
+```
+
+Tambahkan:
+
+```text
+LevelManager.cs
+```
+
+`LevelManager` juga menggunakan Singleton dan `DontDestroyOnLoad()`.
+
+---
+
+## Method
+
+### `LoadLevel()`
+
+Versi yang menggunakan `LevelData`:
+
+```csharp
+LevelManager.Instance.LoadLevel(levelData);
+```
+
+`levelData` berisi informasi level yang akan dimainkan.
+
+Alurnya:
+
+```text
+LevelData
+   │
+   ├── Level Number
+   ├── Scene Name
+   └── Waves
+        │
+        ▼
+   LevelManager
+        │
+        ▼
+   Load Scene
+```
+
+---
+
+### `StartLevel()`
+
+Digunakan ketika pemain benar-benar mulai memainkan level.
 
 ```csharp
 LevelManager.Instance.StartLevel();
 ```
 
-**Menyelesaikan level:**
+State akan berubah menjadi:
+
+```text
+Playing
+```
+
+---
+
+### `CompleteLevel()`
+
+Dipanggil ketika level berhasil diselesaikan.
 
 ```csharp
 LevelManager.Instance.CompleteLevel();
 ```
 
-**Mengalami kekalahan:**
+Alurnya:
+
+```text
+Playing
+   ↓
+Level selesai
+   ↓
+Victory
+```
+
+---
+
+### `FailLevel()`
+
+Dipanggil ketika kondisi kekalahan terpenuhi.
 
 ```csharp
 LevelManager.Instance.FailLevel();
 ```
 
-### Persiapan Scene
+Alurnya:
 
-Pastikan scene yang ingin dimuat telah ditambahkan ke daftar scene build:
-
-**Unity → File → Build Profiles → Scene List**
-
-Pada versi Unity yang lebih lama, pengaturan ini dapat ditemukan melalui **File → Build Settings**.
-
-Nama scene pada `LoadLevel()` harus sesuai dengan nama scene yang terdaftar.
+```text
+Playing
+   ↓
+Kondisi kalah
+   ↓
+GameOver
+```
 
 ---
 
-## 4. Alur Penggunaan
+# 5. LevelData
 
-### A. Memulai Permainan
+## Fungsi
 
-Contoh pemanggilan dari tombol Start pada Main Menu:
+`LevelData` merupakan **ScriptableObject** yang menyimpan konfigurasi suatu level.
+
+Satu asset `LevelData` mewakili satu level.
+
+Contoh:
+
+```text
+Level_01.asset
+Level_02.asset
+Level_03.asset
+```
+
+Masing-masing dapat memiliki konfigurasi berbeda.
+
+---
+
+## Membuat LevelData
+
+Pastikan `LevelData.cs` sudah tidak memiliki compile error.
+
+Di Project Window:
+
+```text
+Assets
+└── _Project
+    └── ScriptableObjects
+        └── Levels
+```
+
+Klik kanan:
+
+```text
+Create
+→ Detergentnation
+→ Level Data
+```
+
+Beri nama:
+
+```text
+Level_01
+```
+
+---
+
+## Konfigurasi LevelData
+
+Pada Inspector akan tersedia:
+
+```text
+Level Information
+├── Level Number
+├── Level Name
+└── Scene Name
+
+Level Configuration
+├── Starting Defense Points
+└── Waves
+```
+
+### Level Number
+
+Nomor level.
+
+Contoh:
+
+```text
+1
+```
+
+### Level Name
+
+Nama level.
+
+Contoh:
+
+```text
+First Encounter
+```
+
+### Scene Name
+
+Nama scene Unity yang akan dimuat.
+
+Contoh:
+
+```text
+Level_01
+```
+
+Jangan menulis:
+
+```text
+Level_01.unity
+```
+
+---
+
+## Starting Defense Points
+
+Menentukan jumlah Defense Point awal.
+
+Contoh:
+
+```text
+5
+```
+
+---
+
+## Waves
+
+Berisi daftar `WaveData`.
+
+Contoh:
+
+```text
+Waves
+Size: 3
+
+Element 0 → Wave_01
+Element 1 → Wave_02
+Element 2 → Wave_03
+```
+
+Urutan list menentukan urutan wave.
+
+```text
+Wave_01
+   ↓
+Wave_02
+   ↓
+Wave_03
+```
+
+`WaveData` harus sudah tersedia agar dapat dimasukkan ke dalam field ini.
+
+---
+
+# 6. EnemyData
+
+## Fungsi
+
+`EnemyData` merupakan **ScriptableObject** yang menyimpan konfigurasi suatu jenis enemy.
+
+Tujuannya agar beberapa enemy dapat menggunakan script `Enemy` yang sama tetapi mempunyai statistik berbeda.
+
+Contoh:
+
+```text
+Enemy_Jellien.asset
+Enemy_Marshquito.asset
+Enemy_Waffare.asset
+```
+
+---
+
+## Membuat EnemyData
+
+Buat folder:
+
+```text
+Assets
+└── _Project
+    └── ScriptableObjects
+        └── Enemies
+```
+
+Klik kanan:
+
+```text
+Create
+→ Detergentnation
+→ Enemy Data
+```
+
+Contoh nama:
+
+```text
+Enemy_Jellien
+```
+
+---
+
+## Konfigurasi EnemyData
+
+Pada Inspector:
+
+```text
+Enemy Information
+├── Enemy Name
+├── Description
+├── Enemy Sprite
+└── Enemy Prefab
+
+Enemy Stats
+├── Max Health
+├── Damage
+├── Move Speed
+├── Attack Range
+└── Attack Cooldown
+
+Reward
+└── Candy Reward
+```
+
+### Enemy Name
+
+Nama enemy.
+
+```text
+Jellien
+```
+
+### Description
+
+Deskripsi enemy.
+
+### Enemy Sprite
+
+Sprite yang digunakan enemy.
+
+### Enemy Prefab
+
+Prefab enemy yang akan digunakan ketika enemy di-spawn.
+
+### Max Health
+
+HP maksimum enemy.
+
+Contoh:
+
+```text
+100
+```
+
+### Damage
+
+Damage serangan enemy.
+
+Contoh:
+
+```text
+10
+```
+
+### Move Speed
+
+Kecepatan bergerak enemy.
+
+Contoh:
+
+```text
+2
+```
+
+### Attack Range
+
+Jarak serangan enemy.
+
+Contoh:
+
+```text
+1
+```
+
+### Attack Cooldown
+
+Jeda antarserangan.
+
+Contoh:
+
+```text
+1
+```
+
+### Candy Reward
+
+Jumlah Candy yang diberikan ketika enemy dikalahkan.
+
+Contoh:
+
+```text
+2
+```
+
+Nilai-nilai tersebut merupakan contoh dan dapat disesuaikan dengan balancing game.
+
+---
+
+# 7. Menggunakan EnemyData pada Enemy
+
+Pada prefab enemy, assign `EnemyData` pada component `Enemy`.
+
+Contoh:
+
+```text
+Enemy_Jellien
+├── Enemy
+│    └── Enemy Data → Enemy_Jellien
+├── EnemyMovement
+├── EnemyAttack
+└── HealthSystem
+```
+
+Kemudian script `Enemy` dapat membaca data:
 
 ```csharp
-public void OnStartButtonClicked()
-{
-    GameManager.Instance.StartGame();
+enemyData.MaxHealth
+enemyData.Damage
+enemyData.MoveSpeed
+enemyData.AttackRange
+enemyData.AttackCooldown
+enemyData.CandyReward
+```
 
-    LevelManager.Instance.LoadLevel(
-        "Level1",
-        1
-    );
+Contoh:
+
+```csharp
+private void Start()
+{
+    currentHealth = enemyData.MaxHealth;
 }
 ```
 
-Alur:
+---
 
-1. `StartGame()` mengubah state menjadi `DefensePlanning`.
-2. `LoadLevel()` memuat scene Level 1.
-3. Setelah pemain selesai mengatur pertahanan, panggil `StartLevel()`.
-4. State berubah menjadi `Playing`.
+# 8. Contoh Alur Lengkap
 
-### B. Memulai Gameplay Setelah Defense Planning
+Misalnya pemain ingin memainkan Level 1.
 
-Contoh pemanggilan dari tombol mulai pada fase Defense Planning:
+### Step 1 — Main Menu
 
-```csharp
-public void OnStartBattleClicked()
-{
-    LevelManager.Instance.StartLevel();
-}
-```
-
-### C. Pause dan Resume
-
-Contoh pemanggilan dari tombol UI:
+Player menekan tombol Start.
 
 ```csharp
-public void OnPauseButtonClicked()
-{
-    GameManager.Instance.PauseGame();
-}
-
-public void OnResumeButtonClicked()
-{
-    GameManager.Instance.ResumeGame();
-}
+GameManager.Instance.StartGame();
 ```
 
-### D. Menyelesaikan Level
+State:
 
-Ketika seluruh wave berhasil diselesaikan:
+```text
+MainMenu
+   ↓
+DefensePlanning
+```
+
+---
+
+### Step 2 — Load Level
+
+Gunakan `LevelData`:
+
+```csharp
+LevelManager.Instance.LoadLevel(levelData);
+```
+
+`LevelManager` membaca:
+
+```text
+LevelData
+├── Level Number
+├── Scene Name
+├── Defense Points
+└── Waves
+```
+
+Kemudian scene level dimuat.
+
+---
+
+### Step 3 — Defense Planning
+
+Pemain mengatur defense berdasarkan:
+
+```text
+Starting Defense Points
+```
+
+Setelah selesai:
+
+```csharp
+LevelManager.Instance.StartLevel();
+```
+
+State:
+
+```text
+DefensePlanning
+   ↓
+Playing
+```
+
+---
+
+### Step 4 — Enemy Spawn
+
+`WaveManager` nantinya membaca `WaveData`.
+
+Contoh:
+
+```text
+Level_01
+   │
+   ├── Wave_01
+   │      ├── Jellien
+   │      └── Jellien
+   │
+   ├── Wave_02
+   │      ├── Marshquito
+   │      └── Jellien
+   │
+   └── Wave_03
+          └── Waffare
+```
+
+Enemy kemudian menggunakan `EnemyData` untuk mendapatkan statistiknya.
+
+---
+
+### Step 5 — Victory
+
+Jika seluruh wave berhasil diselesaikan:
 
 ```csharp
 LevelManager.Instance.CompleteLevel();
 ```
 
-Ketika kondisi kekalahan terpenuhi:
+State:
+
+```text
+Playing
+   ↓
+Victory
+```
+
+---
+
+### Step 6 — Game Over
+
+Jika kondisi kekalahan terpenuhi:
 
 ```csharp
 LevelManager.Instance.FailLevel();
 ```
 
-Kondisi pemanggilan tersebut nantinya dapat dihubungkan dengan `WaveManager`, `HealthSystem`, atau sistem gameplay lainnya.
+State:
+
+```text
+Playing
+   ↓
+GameOver
+```
 
 ---
 
-## 5. Struktur Folder yang Disarankan
+# 9. Struktur Folder
+
+Struktur yang disarankan:
 
 ```text
 Assets/
 └── _Project/
-    └── Scripts/
-        └── Core/
-            ├── GameState.cs
-            ├── GameManager.cs
-            └── LevelManager.cs
+    │
+    ├── Scripts/
+    │   └── Core/
+    │       ├── GameState.cs
+    │       ├── GameManager.cs
+    │       ├── LevelManager.cs
+    │       ├── LevelData.cs
+    │       └── EnemyData.cs
+    │
+    └── ScriptableObjects/
+        ├── Levels/
+        │   ├── Level_01.asset
+        │   └── Level_02.asset
+        │
+        └── Enemies/
+            ├── Enemy_Jellien.asset
+            ├── Enemy_Marshquito.asset
+            └── Enemy_Waffare.asset
 ```
 
 ---
 
-## 6. Hal yang Perlu Diperhatikan
+# 10. Checklist Setup
 
-- `GameManager` dan `LevelManager` menggunakan Singleton. Jangan membuat banyak instance aktif dari masing-masing manager.
-- Keduanya menggunakan `DontDestroyOnLoad()`, sehingga tetap ada ketika scene berganti.
-- Pastikan `GameManager` sudah tersedia sebelum memanggil method `LevelManager` yang mengaksesnya.
-- `Time.timeScale = 0` menghentikan waktu gameplay. Untuk UI pause, gunakan pengaturan yang tidak bergantung pada waktu permainan.
-- `CompleteLevel()` dan `FailLevel()` saat ini hanya mengubah state. Sistem reward, hasil level, dan perpindahan scene belum diimplementasikan.
-- `StartLevel()` belum otomatis memulai wave. Hubungkan method tersebut dengan `WaveManager` ketika sistem wave sudah dibuat.
+Sebelum menjalankan game, pastikan:
+
+### GameManager
+
+- [ ] `GameManager.cs` sudah terpasang.
+- [ ] Hanya ada satu `GameManager`.
+
+### LevelManager
+
+- [ ] `LevelManager.cs` sudah terpasang.
+- [ ] Hanya ada satu `LevelManager`.
+- [ ] Scene level sudah masuk ke Build Profiles → Scene List.
+
+### LevelData
+
+- [ ] `LevelData` asset sudah dibuat.
+- [ ] Level Number sudah diisi.
+- [ ] Level Name sudah diisi.
+- [ ] Scene Name sudah sesuai.
+- [ ] Defense Point sudah ditentukan.
+- [ ] WaveData sudah dimasukkan.
+
+### EnemyData
+
+- [ ] EnemyData asset sudah dibuat.
+- [ ] Enemy Name sudah diisi.
+- [ ] Enemy Prefab sudah di-assign.
+- [ ] Sprite sudah di-assign jika diperlukan.
+- [ ] Statistik enemy sudah diisi.
+- [ ] Candy Reward sudah diisi.
+- [ ] Enemy prefab sudah menggunakan EnemyData yang benar.
 
 ---
 
-## 7. Ringkasan Alur Sistem
+# 11. Prinsip Penggunaan
+
+Gunakan masing-masing script sesuai tanggung jawabnya:
 
 ```text
-Main Menu
-    |
-    v
-GameManager.StartGame()
-    |
-    v
-Defense Planning
-    |
-    v
-LevelManager.LoadLevel()
-    |
-    v
-Level Scene
-    |
-    v
-LevelManager.StartLevel()
-    |
-    v
-Playing
-    |
-    +----> CompleteLevel() ----> Victory
-    |
-    +----> FailLevel() --------> GameOver
+GameState
+    ↓
+"Game sedang dalam kondisi apa?"
+
+GameManager
+    ↓
+"Bagaimana state global game berubah?"
+
+LevelManager
+    ↓
+"Level mana yang sedang dimainkan?"
+
+LevelData
+    ↓
+"Apa konfigurasi level tersebut?"
+
+EnemyData
+    ↓
+"Apa konfigurasi enemy tersebut?"
 ```
 
-**Kesimpulan:** `GameState` mendefinisikan kondisi permainan, `GameManager` mengatur state global, sedangkan `LevelManager` mengatur pemuatan dan siklus level. Ketiganya menjadi fondasi untuk menghubungkan sistem wave, pertahanan, UI, dan gameplay Detergentnation.
+Jangan memasukkan semua logic ke dalam `GameManager`.
+
+Contohnya, `GameManager` **tidak seharusnya** mengatur detail spawn enemy. Hal tersebut menjadi tanggung jawab `WaveManager` dan `EnemySpawner`.
+
+Begitu juga `EnemyData` hanya menyimpan konfigurasi enemy. Logic pergerakan dan serangan tetap berada pada component seperti `EnemyMovement` dan `EnemyAttack`.
+
+Dengan pembagian ini, sistem lebih mudah dikembangkan ketika jumlah level, wave, dan jenis enemy bertambah.
