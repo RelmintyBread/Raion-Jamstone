@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public class Enemy : MonoBehaviour
+public class Enemy : MonoBehaviour, IDamageable
 {
     [Header("Enemy Stats")]
     [SerializeField] private string enemyName;

@@ -13,11 +13,13 @@ public class BaseWeapon : MonoBehaviour
     [SerializeField] protected Animator weaponAnimator;
 
     protected float nextFireTime = 0f;
+    protected int currentAmmo = 0;
     protected PlayerMovement playerMovement;
 
     public bool IsEquipped { get; set; } = false;
 
     public WeaponData CurrentWeaponData => weaponData;
+    public int CurrentAmmo => currentAmmo;
 
     #endregion
 
@@ -109,6 +111,11 @@ public class BaseWeapon : MonoBehaviour
     public void Setup(WeaponData data)
     {
         weaponData = data;
+        if (weaponData != null && weaponData.UsesAmmo)
+        {
+            currentAmmo = weaponData.MaxAmmo;
+            EventBus.Publish(new AmmoChangedEvent(currentAmmo, weaponData.MaxAmmo));
+        }
     }
 
     public virtual void EquipTo(Transform targetParent)
@@ -188,6 +195,18 @@ public class BaseWeapon : MonoBehaviour
         {
             Debug.LogWarning("[BaseWeapon] Missing weapon data, bullet prefab, or firepoint.");
             return;
+        }
+
+        if (weaponData.UsesAmmo)
+        {
+            if (currentAmmo <= 0)
+            {
+                Debug.Log($"[BaseWeapon] Out of ammo for {weaponData.WeaponName}!");
+                return;
+            }
+
+            currentAmmo--;
+            EventBus.Publish(new AmmoChangedEvent(currentAmmo, weaponData.MaxAmmo));
         }
 
         Vector2 direction = playerMovement != null ? playerMovement.LastMovementDirection : Vector2.right;

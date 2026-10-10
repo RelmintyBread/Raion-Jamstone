@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-public class RepairableObject : MonoBehaviour
+public class RepairableObject : MonoBehaviour, IDamageable
 {
     [Header("Health")]
     [SerializeField] private int maxHealth = 100;

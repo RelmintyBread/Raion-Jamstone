@@ -1,13 +1,11 @@
 public struct EquipmentChangedEvent
 {
-    // public EquipmentType EquipmentType { get; }
-    // public EquipmentData Equipment { get; }
+    public int SlotIndex { get; }
+    public string WeaponName { get; }
 
-    // public EquipmentChangedEvent(
-    //     EquipmentType equipmentType,
-    //     EquipmentData equipment)
-    // {
-    //     EquipmentType = equipmentType;
-    //     Equipment = equipment;
-    // }
+    public EquipmentChangedEvent(int slotIndex, string weaponName)
+    {
+        SlotIndex = slotIndex;
+        WeaponName = weaponName;
+    }
 }

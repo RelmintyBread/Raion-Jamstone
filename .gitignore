@@ -105,5 +105,10 @@ InitTestScene*.unity*
 # UI Toolkit auto generated files
 /UIElementsSchema/
 
+# Visual Studio Code & OpenCode / Antigravity Agent tools
+.vscode/
+.opencode/
+.antigravity/
+
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*

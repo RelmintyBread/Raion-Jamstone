@@ -9,6 +9,8 @@ public class WeaponData : ScriptableObject
     [SerializeField] private float fireRate = 0.3f;
     [SerializeField] private float bulletSpeed = 10f;
     [SerializeField] private int damage = 10;
+    [SerializeField] private bool usesAmmo = false;
+    [SerializeField] private int maxAmmo = 10;
     [SerializeField] private GameObject bulletPrefab;
     [SerializeField] private GameObject weaponPrefab;
 
@@ -20,6 +22,8 @@ public class WeaponData : ScriptableObject
     public float FireRate => fireRate;
     public float BulletSpeed => bulletSpeed;
     public int Damage => damage;
+    public bool UsesAmmo => usesAmmo;
+    public int MaxAmmo => maxAmmo;
     public GameObject BulletPrefab => bulletPrefab;
     public GameObject WeaponPrefab => weaponPrefab;
 

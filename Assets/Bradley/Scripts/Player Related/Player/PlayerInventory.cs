@@ -179,6 +179,8 @@ public class PlayerInventory : MonoBehaviour
                 weaponSlots[i].SetActive(i == currentSlotIndex);
             }
         }
+
+        EventBus.Publish(new EquipmentChangedEvent(currentSlotIndex, CurrentWeaponName));
     }
 
     // Untuk dipanggil dari UI jika perlu
